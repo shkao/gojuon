@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#FFD93B">
+<title>五十音不靠背</title>
+<style>
+:root {
+  --yellow: #FFD93B;
+  --red: #FF6B5B;
+  --teal: #2BB3A3;
+  --purple: #8E6FC0;
+  --ink: #2b2b2b;
+  --paper: #FFFDF5;
+  --card: #ffffff;
+  --nav-h: 64px;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; }
+body {
+  font-family: "Yu Gothic", "Hiragino Sans", "PingFang TC", "Microsoft JhengHei", sans-serif;
+  background: #efe9d8;
+  color: var(--ink);
+  display: flex; justify-content: center;
+}
+#app {
+  width: 100%; max-width: 480px; min-height: 100dvh;
+  background: var(--paper);
+  background-image: radial-gradient(#ffd93b55 4px, transparent 4px);
+  background-size: 80px 80px;
+  display: flex; flex-direction: column;
+  position: relative;
+  box-shadow: 0 0 30px rgba(0,0,0,.15);
+}
+/* App Bar */
+.appbar {
+  position: sticky; top: 0; z-index: 20;
+  background: var(--yellow);
+  border-bottom: 3px solid var(--ink);
+  padding: calc(10px + env(safe-area-inset-top)) 16px 10px;
+  display: flex; align-items: center; gap: 12px;
+}
+.appbar img { width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--ink); object-fit: cover; }
+.appbar .t1 { font-size: 1.15rem; font-weight: 800; letter-spacing: .08em; }
+.appbar .t1 span { color: var(--red); }
+.appbar .t2 { font-size: .7rem; color: #6b5a00; }
+.appbar .spk-test {
+  margin-left: auto; border: 2px solid var(--ink); background: var(--card);
+  border-radius: 50%; width: 38px; height: 38px; font-size: 1.1rem; cursor: pointer;
+}
+/* 主內容 */
+main { flex: 1; padding: 14px 14px calc(var(--nav-h) + env(safe-area-inset-bottom) + 20px); }
+.panel { display: none; }
+.panel.active { display: block; animation: fadein .22s; }
+@keyframes fadein { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; } }
+
+/* 底部分頁列 */
+.tabbar {
+  position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+  width: 100%; max-width: 480px; z-index: 30;
+  height: calc(var(--nav-h) + env(safe-area-inset-bottom));
+  padding-bottom: env(safe-area-inset-bottom);
+  background: var(--card); border-top: 3px solid var(--ink);
+  display: flex;
+}
+.tabbar button {
+  flex: 1; border: none; background: none; cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  font-family: inherit; font-size: .7rem; font-weight: 700; color: #999;
+}
+.tabbar button .ico { font-size: 1.45rem; line-height: 1; }
+.tabbar button.active { color: var(--ink); }
+.tabbar button.active .ico { transform: translateY(-2px); }
+.tabbar button.active::after {
+  content: ""; width: 26px; height: 4px; border-radius: 2px; background: var(--red); margin-top: 2px;
+}
+
+/* 區塊切換籤 (segmented chips) */
+.chips { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 10px; scrollbar-width: none; }
+.chips::-webkit-scrollbar { display: none; }
+.chips button {
+  border: 2px solid var(--ink); background: var(--card); border-radius: 999px;
+  padding: 7px 14px; font-size: .85rem; font-weight: 700; cursor: pointer;
+  white-space: nowrap; font-family: inherit; flex-shrink: 0;
+}
+.chips button.on { background: var(--teal); color: #fff; }
+.chips.warm button.on { background: var(--red); }
+
+.mode-toggle { display: flex; justify-content: center; margin-bottom: 12px; }
+.mode-toggle button {
+  border: 2px solid var(--ink); background: var(--card); padding: 7px 20px;
+  cursor: pointer; font-weight: 700; font-family: inherit; font-size: .9rem;
+}
+.mode-toggle button:first-child { border-radius: 10px 0 0 10px; }
+.mode-toggle button:last-child { border-radius: 0 10px 10px 0; border-left: none; }
+.mode-toggle button.on { background: var(--purple); color: #fff; }
+
+/* 假名格 */
+.kgrid { display: grid; gap: 7px; }
+.kgrid.c5 { grid-template-columns: repeat(5, 1fr); }
+.kgrid.c3 { grid-template-columns: repeat(3, 1fr); }
+.kgrid .cell {
+  background: var(--card); border: 2px solid var(--ink);
+  border-radius: 12px; aspect-ratio: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; cursor: pointer; user-select: none;
+}
+.kgrid.c3 .cell { aspect-ratio: 1.6; }
+.kgrid .cell:active { background: var(--yellow); transform: scale(.95); }
+.kgrid .cell .k { font-size: clamp(1.2rem, 5.6vw, 1.7rem); font-weight: 700; }
+.kgrid.c3 .cell .k { font-size: clamp(1.1rem, 5vw, 1.5rem); }
+.kgrid .cell .r { font-size: .62rem; color: #999; }
+.kgrid .blank { visibility: hidden; }
+.row-label { grid-column: 1 / -1; font-size: .75rem; font-weight: 700; color: #b09a20; margin-top: 4px; }
+
+/* 底部彈出詳情 */
+.sheet-backdrop {
+  position: fixed; inset: 0; background: rgba(0,0,0,.35); z-index: 40;
+  opacity: 0; pointer-events: none; transition: opacity .25s;
+}
+.sheet-backdrop.open { opacity: 1; pointer-events: auto; }
+.sheet {
+  position: fixed; bottom: 0; left: 50%; transform: translate(-50%, 105%);
+  width: 100%; max-width: 480px; z-index: 50;
+  background: var(--card); border: 3px solid var(--ink); border-bottom: none;
+  border-radius: 22px 22px 0 0; padding: 14px 18px calc(20px + env(safe-area-inset-bottom));
+  transition: transform .3s cubic-bezier(.2,.9,.3,1);
+  max-height: 78dvh; overflow-y: auto;
+}
+.sheet.open { transform: translate(-50%, 0); }
+.sheet .grab { width: 44px; height: 5px; border-radius: 3px; background: #ddd; margin: 0 auto 12px; }
+.sheet .row1 { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.evolve { display: flex; align-items: center; gap: 8px; font-weight: 700; }
+.evolve .src {
+  font-size: 1.9rem; background: var(--yellow); border-radius: 12px;
+  min-width: 58px; height: 58px; padding: 0 8px;
+  display: flex; align-items: center; justify-content: center;
+}
+.evolve .arrow { font-size: 1.2rem; color: var(--red); }
+.evolve .dst { font-size: 2.1rem; }
+.play-btn {
+  border: 2px solid var(--ink); background: var(--teal); color: #fff;
+  border-radius: 999px; padding: 8px 18px; font-size: 1rem; font-weight: 700;
+  cursor: pointer; font-family: inherit; margin-left: auto;
+}
+.play-btn:active { transform: scale(.95); }
+.sheet .romaji-line { margin-top: 8px; color: var(--teal); font-weight: 700; font-size: 1.05rem; }
+.sheet .note { margin-top: 8px; color: #555; font-size: .9rem; line-height: 1.75; }
+.sheet .examples { margin-top: 12px; display: flex; flex-direction: column; gap: 7px; }
+.ex {
+  background: var(--paper); border-left: 5px solid var(--red);
+  padding: 9px 12px; border-radius: 0 10px 10px 0; font-size: .9rem;
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+}
+.ex .jp { font-weight: 700; }
+.ex .kana-r { color: var(--purple); }
+.ex .zh { color: #777; }
+.ex .mini-play {
+  margin-left: auto; border: 2px solid var(--ink); background: var(--card);
+  border-radius: 50%; width: 32px; height: 32px; cursor: pointer; font-size: .85rem; flex-shrink: 0;
+}
+
+/* 翻卡 */
+.flash-area { text-align: center; }
+.flash-tip { margin-bottom: 14px; color: #666; font-size: .9rem; }
+.flashcard { width: min(320px, 88%); height: 290px; margin: 0 auto; perspective: 1000px; cursor: pointer; }
+.flashcard .inner {
+  position: relative; width: 100%; height: 100%;
+  transform-style: preserve-3d; transition: transform .5s;
+}
+.flashcard.flipped .inner { transform: rotateY(180deg); }
+.flashcard .face {
+  position: absolute; inset: 0; backface-visibility: hidden;
+  background: var(--card); border: 3px solid var(--ink); border-radius: 22px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  box-shadow: 5px 5px 0 var(--teal); padding: 16px;
+}
+.flashcard .front .kanji { font-size: 4.6rem; font-weight: 700; }
+.flashcard .front .hint { color: #999; margin-top: 14px; font-size: .85rem; }
+.flashcard .back { transform: rotateY(180deg); box-shadow: 5px 5px 0 var(--red); }
+.flashcard .back .pair { font-size: 3rem; font-weight: 700; }
+.flashcard .back .romaji { color: var(--teal); font-size: 1.15rem; font-weight: 700; margin: 6px 0; }
+.flashcard .back .note { font-size: .8rem; color: #666; line-height: 1.65; }
+.flash-ctrl { margin-top: 16px; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+.btn {
+  border: 3px solid var(--ink); background: var(--card); border-radius: 14px;
+  padding: 11px 18px; font-size: .95rem; font-weight: 700; cursor: pointer;
+  box-shadow: 3px 3px 0 var(--ink); font-family: inherit;
+}
+.btn:active { transform: translate(2px,2px); box-shadow: 1px 1px 0 var(--ink); }
+.btn.primary { background: var(--red); color: #fff; }
+.btn.teal { background: var(--teal); color: #fff; }
+.flash-progress { margin-top: 10px; color: #888; font-size: .85rem; }
+
+/* 配對 */
+.match-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; gap: 8px; }
+.match-head .stat { font-weight: 700; font-size: .9rem; }
+.match-tip { color: #666; font-size: .82rem; margin-bottom: 10px; }
+.match-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.mcard {
+  aspect-ratio: 3/4; border: 3px solid var(--ink); border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: clamp(1.2rem, 6vw, 1.8rem); font-weight: 700; cursor: pointer;
+  background: var(--purple); color: var(--purple); user-select: none;
+  transition: background .2s, color .2s; position: relative;
+}
+.mcard.open { background: var(--card); color: var(--ink); }
+.mcard.done { background: var(--yellow); color: var(--ink); border-style: dashed; cursor: default; }
+.mcard .tag {
+  position: absolute; top: 5px; left: 7px; font-size: .6rem; color: #aaa; font-weight: 400; visibility: hidden;
+}
+.mcard.open .tag, .mcard.done .tag { visibility: visible; }
+.match-win { margin-top: 14px; text-align: center; font-size: 1.05rem; font-weight: 700; color: var(--teal); }
+
+/* 測驗 */
+.quiz-box {
+  background: var(--card); border: 3px solid var(--ink); border-radius: 18px;
+  padding: 20px; box-shadow: 5px 5px 0 var(--purple); text-align: center;
+}
+.quiz-q { font-size: 1rem; color: #666; margin-bottom: 10px; }
+.quiz-big { font-size: 3.8rem; font-weight: 700; margin-bottom: 14px; min-height: 1.2em; }
+.quiz-big button.hear {
+  border: 3px solid var(--ink); background: var(--yellow); border-radius: 50%;
+  width: 84px; height: 84px; font-size: 2rem; cursor: pointer;
+}
+.quiz-opts { display: grid; grid-template-columns: repeat(2, 1fr); gap: 9px; }
+.quiz-opts button {
+  border: 3px solid var(--ink); border-radius: 12px; background: var(--paper);
+  font-size: 1.3rem; font-weight: 700; padding: 14px 6px; cursor: pointer; font-family: inherit;
+}
+.quiz-opts button:active { background: var(--yellow); }
+.quiz-opts button.right { background: var(--teal); color: #fff; }
+.quiz-opts button.wrong { background: var(--red); color: #fff; }
+.quiz-meta { display: flex; justify-content: space-between; margin-bottom: 12px; font-weight: 700; font-size: .9rem; }
+.quiz-meta .streak { color: var(--red); }
+.quiz-result .score { font-size: 3rem; font-weight: 700; color: var(--red); margin: 10px 0; }
+.quiz-fb { min-height: 1.6em; margin-top: 10px; font-weight: 700; font-size: .95rem; }
+.quiz-range { margin: 12px 0 16px; display: flex; flex-direction: column; gap: 8px; text-align: left; }
+.quiz-range label {
+  display: flex; align-items: center; gap: 8px; font-size: .9rem; font-weight: 700;
+  background: var(--paper); border: 2px solid var(--ink); border-radius: 10px; padding: 9px 12px; cursor: pointer;
+}
+.quiz-range input { width: 18px; height: 18px; accent-color: var(--red); }
+footer { text-align: center; padding: 8px 0 4px; color: #bbb; font-size: .7rem; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="appbar">
+    <img src="assets/hero.png" alt="" onerror="this.style.display='none'">
+    <div>
+      <div class="t1">五十音<span>不靠背</span></div>
+      <div class="t2">認得字源,假名不用死背</div>
+    </div>
+    <button class="spk-test" id="spkTest" title="測試發音">🔊</button>
+  </div>
+
+  <main>
+    <!-- 五十音表 -->
+    <section id="table" class="panel active">
+      <div class="chips" id="setChips">
+        <button data-set="seion" class="on">清音</button>
+        <button data-set="dakuon">濁音</button>
+        <button data-set="handakuon">半濁音</button>
+        <button data-set="yoon">拗音</button>
+      </div>
+      <div class="mode-toggle">
+        <button id="hiraBtn" class="on">平假名</button><button id="kataBtn">片假名</button>
+      </div>
+      <div id="gridArea"></div>
+    </section>
+
+    <!-- 字源翻卡 -->
+    <section id="flash" class="panel">
+      <div class="flash-area">
+        <div class="chips warm" id="deckChips">
+          <button data-deck="seion" class="on">清音字源</button>
+          <button data-deck="dakuon">濁音・半濁音</button>
+          <button data-deck="yoon">拗音</button>
+        </div>
+        <p class="flash-tip" id="flashTip">這個漢字變成了哪個假名?想一想,再點卡片翻面。</p>
+        <div class="flashcard" id="flashcard">
+          <div class="inner">
+            <div class="face front">
+              <div class="kanji" id="flashKanji"></div>
+              <div class="hint">點一下翻面</div>
+            </div>
+            <div class="face back">
+              <div class="pair" id="flashPair"></div>
+              <div class="romaji" id="flashRomaji"></div>
+              <div class="note" id="flashNote"></div>
+            </div>
+          </div>
+        </div>
+        <div class="flash-ctrl">
+          <button class="btn" id="flashPrev">上一張</button>
+          <button class="btn teal" id="flashPlay">🔊 發音</button>
+          <button class="btn primary" id="flashNext">下一張</button>
+        </div>
+        <div class="flash-ctrl">
+          <button class="btn" id="flashShuffle">洗牌</button>
+        </div>
+        <div class="flash-progress" id="flashProgress"></div>
+      </div>
+    </section>
+
+    <!-- 字源配對 -->
+    <section id="match" class="panel">
+      <p class="match-tip">翻開兩張卡,把「字源漢字」和它變成的「平假名」配成對!</p>
+      <div class="match-head">
+        <span class="stat">步數:<span id="matchMoves">0</span></span>
+        <button class="btn" id="matchRestart">重新開始</button>
+      </div>
+      <div class="match-grid" id="matchGrid"></div>
+      <div class="match-win" id="matchWin"></div>
+    </section>
+
+    <!-- 測驗 -->
+    <section id="quiz" class="panel">
+      <div class="quiz-box" id="quizBox">
+        <div id="quizStart">
+          <h2 style="margin-bottom:8px">十題挑戰</h2>
+          <p style="color:#666;font-size:.9rem">混合出題:讀音、平片假名互認、字源、聽力。</p>
+          <div class="quiz-range">
+            <label><input type="checkbox" id="rangeSeion" checked disabled>清音(必選)</label>
+            <label><input type="checkbox" id="rangeDakuon">濁音・半濁音</label>
+            <label><input type="checkbox" id="rangeYoon">拗音</label>
+          </div>
+          <p style="color:#666;font-size:.9rem">最佳紀錄:<b id="bestScore">—</b></p>
+          <br>
+          <button class="btn primary" id="quizGo">開始測驗</button>
+        </div>
+        <div id="quizPlay" hidden>
+          <div class="quiz-meta">
+            <span>第 <span id="quizNum">1</span> / 10 題</span>
+            <span class="streak" id="quizStreak"></span>
+          </div>
+          <div class="quiz-q" id="quizQ"></div>
+          <div class="quiz-big" id="quizBig"></div>
+          <div class="quiz-opts" id="quizOpts"></div>
+          <div class="quiz-fb" id="quizFb"></div>
+        </div>
+        <div id="quizDone" class="quiz-result" hidden>
+          <h2>測驗結束!</h2>
+          <div class="score"><span id="finalScore"></span> / 10</div>
+          <p id="finalMsg" style="color:#666;font-size:.92rem"></p>
+          <br>
+          <button class="btn primary" id="quizAgain">再玩一次</button>
+        </div>
+      </div>
+    </section>
+    <footer>取材自《五十音不靠背:學過一次記得一輩子的假名課》(神奇裘莉 著)</footer>
+  </main>
+
+  <!-- 底部分頁列 -->
+  <div class="tabbar">
+    <button data-panel="table" class="active"><span class="ico">🗾</span>五十音表</button>
+    <button data-panel="flash"><span class="ico">🎴</span>字源翻卡</button>
+    <button data-panel="match"><span class="ico">🧩</span>配對</button>
+    <button data-panel="quiz"><span class="ico">✏️</span>測驗</button>
+  </div>
+
+  <!-- 詳情底部彈出卡 -->
+  <div class="sheet-backdrop" id="sheetBackdrop"></div>
+  <div class="sheet" id="sheet"><div class="grab"></div><div id="sheetBody"></div></div>
+</div>
+
+<script>
+/* ===================== 資料 ===================== */
+const KANA = [
+{romaji:"a",hiragana:"あ",katakana:"ア",hiraSource:"安",hiraNote:"由「安」的草書轉變而來",kataSource:"阿",kataNote:"「阿」去掉右邊的「可」,阝簡化成兩筆",examples:[{jp:"安心",kana:"あんしん",romaji:"anshin",zh:"安心"},{jp:"安静",kana:"あんせい",romaji:"ansei",zh:"病人靜養休息"},{jp:"安全",kana:"あんぜん",romaji:"anzen",zh:"安全"}]},
+{romaji:"i",hiragana:"い",katakana:"イ",hiraSource:"以",hiraNote:"由「以」的草書轉變而來",kataSource:"伊",kataNote:"「伊」去掉右邊的「尹」,只留亻偏旁",examples:[{jp:"可愛い",kana:"かわいい",romaji:"kawaii",zh:"可愛(卡哇伊)"},{jp:"美味しい",kana:"おいしい",romaji:"oishii",zh:"好吃(喔伊細)"},{jp:"以来",kana:"いらい",romaji:"irai",zh:"以來"}]},
+{romaji:"u",hiragana:"う",katakana:"ウ",hiraSource:"宇",hiraNote:"由「宇」的草書轉變而來",kataSource:"宇",kataNote:"取「宇」的寶蓋頭宀的部分",examples:[{jp:"宇宙",kana:"うちゅう",romaji:"uchū",zh:"宇宙(多指外太空)"},{jp:"宇宙人",kana:"うちゅうじん",romaji:"uchūjin",zh:"外星人"},{jp:"うどん",kana:"うどん",romaji:"udon",zh:"烏龍麵"}]},
+{romaji:"e",hiragana:"え",katakana:"エ",hiraSource:"衣",hiraNote:"由「衣」的草書轉變而來",kataSource:"江",kataNote:"取「江」右半部的「工」字",examples:[{jp:"円",kana:"えん",romaji:"en",zh:"日圓"},{jp:"援助",kana:"えんじょ",romaji:"enjo",zh:"援助"},{jp:"江戸",kana:"えど",romaji:"edo",zh:"東京的舊地名"}]},
+{romaji:"o",hiragana:"お",katakana:"オ",hiraSource:"於",hiraNote:"由「於」的草書轉變而來",kataSource:"於",kataNote:"取「於」左半邊「方」字再簡化",examples:[{jp:"お茶",kana:"おちゃ",romaji:"ocha",zh:"茶"},{jp:"温泉",kana:"おんせん",romaji:"onsen",zh:"溫泉"},{jp:"おばさん",kana:"おばさん",romaji:"obasan",zh:"歐巴桑"}]},
+{romaji:"ka",hiragana:"か",katakana:"カ",hiraSource:"加",hiraNote:"源自「加」,右邊一點是口演變而來",kataSource:"加",kataNote:"取「加」左半部的「力」字",examples:[{jp:"加法",kana:"かほう",romaji:"kahō",zh:"加法"},{jp:"看板",kana:"かんばん",romaji:"kanban",zh:"廣告招牌(臺語砍棒)"},{jp:"カラオケ",kana:"カラオケ",romaji:"karaoke",zh:"卡拉OK"}]},
+{romaji:"ki",hiragana:"き",katakana:"キ",hiraSource:"幾",hiraNote:"源自「幾」字的草書體",kataSource:"幾",kataNote:"源自「幾」字的部分筆劃",examples:[{jp:"気持ち",kana:"きもち",romaji:"kimochi",zh:"感覺(奇摩子)"},{jp:"気分",kana:"きぶん",romaji:"kibun",zh:"心理加生理的感覺"},{jp:"機会",kana:"きかい",romaji:"kikai",zh:"機會"}]},
+{romaji:"ku",hiragana:"く",katakana:"ク",hiraSource:"久",hiraNote:"源自「久」字的草書體",kataSource:"久",kataNote:"源自「久」字的前二筆",examples:[{jp:"口",kana:"くち",romaji:"kuchi",zh:"口、嘴"},{jp:"黒",kana:"くろ",romaji:"kuro",zh:"黑"},{jp:"訓読",kana:"くんどく",romaji:"kundoku",zh:"訓讀"}]},
+{romaji:"ke",hiragana:"け",katakana:"ケ",hiraSource:"計",hiraNote:"源自「計」字草書體,言部一筆帶過",kataSource:"介",kataNote:"源自「介」字的簡化,長得像英文K",examples:[{jp:"計画",kana:"けいかく",romaji:"keikaku",zh:"計畫"},{jp:"健康",kana:"けんこう",romaji:"kenkō",zh:"健康"},{jp:"警察",kana:"けいさつ",romaji:"keisatsu",zh:"警察"}]},
+{romaji:"ko",hiragana:"こ",katakana:"コ",hiraSource:"己",hiraNote:"源自「己」字草書體,省略中間一筆",kataSource:"己",kataNote:"擷取「己」字上半部,省略第三筆劃",examples:[{jp:"自己紹介",kana:"じこしょうかい",romaji:"jikoshōkai",zh:"自我介紹"},{jp:"子供",kana:"こども",romaji:"kodomo",zh:"小孩"},{jp:"口座",kana:"こうざ",romaji:"kōza",zh:"銀行戶頭"}]},
+{romaji:"sa",hiragana:"さ",katakana:"サ",hiraSource:"左",hiraNote:"源自「左」字的草書體",kataSource:"散",kataNote:"擷取「散」字左邊的上半部",examples:[{jp:"左翼",kana:"さよく",romaji:"sayoku",zh:"左翼"},{jp:"左遷",kana:"させん",romaji:"sasen",zh:"降職"},{jp:"サンマ",kana:"サンマ",romaji:"sanma",zh:"秋刀魚"}]},
+{romaji:"shi",hiragana:"し",katakana:"シ",hiraSource:"之",hiraNote:"「之」字草書體,三筆劃濃縮為一筆",kataSource:"之",kataNote:"把「之」字三筆劃解構重新組合",examples:[{jp:"親友",kana:"しんゆう",romaji:"shinyū",zh:"感情非常好的朋友"},{jp:"信用",kana:"しんよう",romaji:"shinyō",zh:"信用"},{jp:"時間",kana:"じかん",romaji:"jikan",zh:"時間"}]},
+{romaji:"su",hiragana:"す",katakana:"ス",hiraSource:"寸",hiraNote:"「寸」字草書體,二三筆連成繞圈",kataSource:"須",kataNote:"擷取「須」字頁字最下面三筆劃",examples:[{jp:"寸法",kana:"すんぽう",romaji:"sunpō",zh:"尺寸"},{jp:"寿司",kana:"すし",romaji:"sushi",zh:"壽司"},{jp:"相撲",kana:"すもう",romaji:"sumō",zh:"相撲"}]},
+{romaji:"se",hiragana:"せ",katakana:"セ",hiraSource:"世",hiraNote:"「世」字草書體,減省筆劃保留外觀",kataSource:"世",kataNote:"把「世」字只留下最後兩筆",examples:[{jp:"世界",kana:"せかい",romaji:"sekai",zh:"世界"},{jp:"世間",kana:"せけん",romaji:"seken",zh:"世間"},{jp:"世紀末",kana:"せいきまつ",romaji:"seikimatsu",zh:"世紀末"}]},
+{romaji:"so",hiragana:"そ",katakana:"ソ",hiraSource:"曾",hiraNote:"「曾」字草書體,減省筆劃保留外觀",kataSource:"曾",kataNote:"「曾」字只書寫最初的兩筆劃",examples:[{jp:"増加",kana:"ぞうか",romaji:"zōka",zh:"增加"},{jp:"卒業",kana:"そつぎょう",romaji:"sotsugyō",zh:"畢業"},{jp:"損失",kana:"そんしつ",romaji:"sonshitsu",zh:"損失"}]},
+{romaji:"ta",hiragana:"た",katakana:"タ",hiraSource:"太",hiraNote:"源自「太」字,發音和中文太相同",kataSource:"多",kataNote:"「多」字只留上半部「夕」的部分",examples:[{jp:"畳",kana:"たたみ",romaji:"tatami",zh:"榻榻米"},{jp:"太陽",kana:"たいよう",romaji:"taiyō",zh:"太陽"},{jp:"大使",kana:"たいし",romaji:"taishi",zh:"大使"}]},
+{romaji:"chi",hiragana:"ち",katakana:"チ",hiraSource:"知",hiraNote:"源自「知」字,孫過庭書譜有ち型字跡",kataSource:"千",kataNote:"由「千」字演變,保留千的形體",examples:[{jp:"知識",kana:"ちしき",romaji:"chishiki",zh:"知識"},{jp:"知恵",kana:"ちえ",romaji:"chie",zh:"智慧"},{jp:"知名度",kana:"ちめいど",romaji:"chimeido",zh:"知名度"}]},
+{romaji:"tsu",hiragana:"つ",katakana:"ツ",hiraSource:"川",hiraNote:"源自「川」字,川在日文多訓讀かわ",kataSource:"川",kataNote:"由「川」變化,橫向排列筆劃而成",examples:[{jp:"通信",kana:"つうしん",romaji:"tsūshin",zh:"通信"},{jp:"通話",kana:"つうわ",romaji:"tsūwa",zh:"通話"},{jp:"月",kana:"つき",romaji:"tsuki",zh:"月亮"}]},
+{romaji:"te",hiragana:"て",katakana:"テ",hiraSource:"天",hiraNote:"源自「天」字,天的發音和中文相同",kataSource:"天",kataNote:"保留「天」兩橫及一撇的下半部",examples:[{jp:"天婦羅",kana:"てんぷら",romaji:"tenpura",zh:"日式炸蝦炸物"},{jp:"電車",kana:"でんしゃ",romaji:"densha",zh:"電車"},{jp:"手料理",kana:"てりょうり",romaji:"teryōri",zh:"家庭手作料理"}]},
+{romaji:"to",hiragana:"と",katakana:"ト",hiraSource:"止",hiraNote:"「止」字草書體,四筆劃精簡成兩筆",kataSource:"止",kataNote:"「止」字只書寫最初的兩筆劃",examples:[{jp:"豆腐",kana:"とうふ",romaji:"tōfu",zh:"豆腐"},{jp:"読書",kana:"どくしょ",romaji:"dokusho",zh:"讀書"},{jp:"丼",kana:"どんぶり",romaji:"donburi",zh:"丼飯"}]},
+{romaji:"na",hiragana:"な",katakana:"ナ",hiraSource:"奈",hiraNote:"奈字草書體演變,筆劃減省保留外觀",kataSource:"奈",kataNote:"奈字只書寫最初的兩筆劃就得到ナ",examples:[{jp:"奈良",kana:"なら",romaji:"nara",zh:"奈良"},{jp:"内科",kana:"ないか",romaji:"naika",zh:"內科"},{jp:"納豆",kana:"なっとう",romaji:"nattō",zh:"納豆"}]},
+{romaji:"ni",hiragana:"に",katakana:"ニ",hiraSource:"仁",hiraNote:"仁字草書體,左邊人字偏旁連為一筆",kataSource:"仁",kataNote:"擷取自中文仁字右半部",examples:[{jp:"日本",kana:"にほん",romaji:"nihon",zh:"日本"},{jp:"日本語",kana:"にほんご",romaji:"nihongo",zh:"日語、日文"},{jp:"煮物",kana:"にもの",romaji:"nimono",zh:"用醬汁滷煮的料理"}]},
+{romaji:"nu",hiragana:"ぬ",katakana:"ヌ",hiraSource:"奴",hiraNote:"奴字草書體,總共只用三筆劃完成",kataSource:"奴",kataNote:"擷取自中文奴字右半部",examples:[{jp:"塗り薬",kana:"ぬりぐすり",romaji:"nurigusuri",zh:"外用藥膏"},{jp:"盗人",kana:"ぬすびと",romaji:"nusubito",zh:"賊、小偷"}]},
+{romaji:"ne",hiragana:"ね",katakana:"ネ",hiraSource:"祢",hiraNote:"祢字草書體,只用二筆劃完成",kataSource:"祢",kataNote:"擷取自中文祢字左半部",examples:[{jp:"寝顔",kana:"ねがお",romaji:"negao",zh:"睡著的臉"},{jp:"猫背",kana:"ねこぜ",romaji:"nekoze",zh:"駝背"},{jp:"値段",kana:"ねだん",romaji:"nedan",zh:"價格"}]},
+{romaji:"no",hiragana:"の",katakana:"ノ",hiraSource:"乃",hiraNote:"乃字草書體,總共只用一筆劃完成",kataSource:"乃",kataNote:"擷取自中文乃字的一撇",examples:[{jp:"海苔",kana:"のり",romaji:"nori",zh:"海苔"},{jp:"濃密",kana:"のうみつ",romaji:"nōmitsu",zh:"濃密"}]},
+{romaji:"ha",hiragana:"は",katakana:"ハ",hiraSource:"波",hiraNote:"波字草書體,三點水只用一筆劃",kataSource:"八",kataNote:"擷取自中文八字,保留完整字型",examples:[{jp:"波瀾",kana:"はらん",romaji:"haran",zh:"波瀾"},{jp:"蛤",kana:"はまぐり",romaji:"hamaguri",zh:"蛤蜊"},{jp:"八方美人",kana:"はっぽうびじん",romaji:"happōbijin",zh:"八面玲瓏,多含貶意"}]},
+{romaji:"hi",hiragana:"ひ",katakana:"ヒ",hiraSource:"比",hiraNote:"ひ源自中文比字的草書體",kataSource:"比",kataNote:"擷取自中文比字的右半部",examples:[{jp:"比較",kana:"ひかく",romaji:"hikaku",zh:"比較"},{jp:"表現",kana:"ひょうげん",romaji:"hyōgen",zh:"表現"},{jp:"美少女",kana:"びしょうじょ",romaji:"bishōjo",zh:"美少女"}]},
+{romaji:"fu",hiragana:"ふ",katakana:"フ",hiraSource:"不",hiraNote:"ふ源自中文不字的草書體",kataSource:"不",kataNote:"擷取不字頭兩筆劃,連接成一筆",examples:[{jp:"不可能",kana:"ふかのう",romaji:"fukanō",zh:"不可能"},{jp:"不在",kana:"ふざい",romaji:"fuzai",zh:"不在"},{jp:"不思議",kana:"ふしぎ",romaji:"fushigi",zh:"不可思議"}]},
+{romaji:"he",hiragana:"へ",katakana:"ヘ",hiraSource:"部",hiraNote:"へ源自中文部字的偏旁阝",kataSource:"部",kataNote:"ヘ同樣源自部字的偏旁阝",examples:[{jp:"部屋",kana:"へや",romaji:"heya",zh:"房間"},{jp:"弁当",kana:"べんとう",romaji:"bentō",zh:"便當"},{jp:"便利",kana:"べんり",romaji:"benri",zh:"便利"}]},
+{romaji:"ho",hiragana:"ほ",katakana:"ホ",hiraSource:"保",hiraNote:"人字邊一筆帶過,右邊呆簡化而成",kataSource:"保",kataNote:"ホ來自保字右下部分的木",examples:[{jp:"保護",kana:"ほご",romaji:"hogo",zh:"保護"},{jp:"保育園",kana:"ほいくえん",romaji:"hoikuen",zh:"相當於托兒所"},{jp:"保険",kana:"ほけん",romaji:"hoken",zh:"保險"}]},
+{romaji:"ma",hiragana:"ま",katakana:"マ",hiraSource:"末",hiraNote:"ま源於中文末,保留大致的形象",kataSource:"末",kataNote:"取自末字上半部的兩橫筆",examples:[{jp:"漫画",kana:"まんが",romaji:"manga",zh:"漫畫"},{jp:"毎日",kana:"まいにち",romaji:"mainichi",zh:"每天"},{jp:"満席",kana:"まんせき",romaji:"manseki",zh:"滿座"}]},
+{romaji:"mi",hiragana:"み",katakana:"ミ",hiraSource:"美",hiraNote:"み來自中文美,加入鼻音成為mi",kataSource:"三",kataNote:"ミ寫法來自中文字三",examples:[{jp:"味噌汁",kana:"みそしる",romaji:"misoshiru",zh:"味噌湯"},{jp:"蜜柑",kana:"みかん",romaji:"mikan",zh:"蜜柑、橘子"}]},
+{romaji:"mu",hiragana:"む",katakana:"ム",hiraSource:"武",hiraNote:"武的吳音讀作む,如武者",kataSource:"牟",kataNote:"來自中文牟字的上半部",examples:[{jp:"武者",kana:"むしゃ",romaji:"musha",zh:"武者"},{jp:"無限",kana:"むげん",romaji:"mugen",zh:"無限"},{jp:"無罪",kana:"むざい",romaji:"muzai",zh:"無罪"}]},
+{romaji:"me",hiragana:"め",katakana:"メ",hiraSource:"女",hiraNote:"め即是中文「女」字的草書體",kataSource:"女",kataNote:"來自「女」第一劃下半部和第二劃",examples:[{jp:"女神",kana:"めがみ",romaji:"megami",zh:"女神"},{jp:"目線",kana:"めせん",romaji:"mesen",zh:"視線"},{jp:"名産",kana:"めいさん",romaji:"meisan",zh:"名產"}]},
+{romaji:"mo",hiragana:"も",katakana:"モ",hiraSource:"毛",hiraNote:"由中文字毛的草書變化而來",kataSource:"毛",kataNote:"由毛變化,只保留後半部",examples:[{jp:"毛布",kana:"もうふ",romaji:"mōfu",zh:"毛毯"},{jp:"猛暑",kana:"もうしょ",romaji:"mōsho",zh:"酷暑"},{jp:"目的",kana:"もくてき",romaji:"mokuteki",zh:"目的"}]},
+{romaji:"ya",hiragana:"や",katakana:"ヤ",hiraSource:"也",hiraNote:"由中文字「也」變化而來",kataSource:"也",kataNote:"也由「也」變化,筆劃剛硬",examples:[{jp:"野菜",kana:"やさい",romaji:"yasai",zh:"蔬菜"},{jp:"約束",kana:"やくそく",romaji:"yakusoku",zh:"約定"},{jp:"焼肉",kana:"やきにく",romaji:"yakiniku",zh:"燒肉"}]},
+{romaji:"yu",hiragana:"ゆ",katakana:"ユ",hiraSource:"由",hiraNote:"來自「由」,讀音近臺語由來",kataSource:"由",kataNote:"也由中文字「由」擷取而來",examples:[{jp:"由来",kana:"ゆらい",romaji:"yurai",zh:"由來"},{jp:"自由",kana:"じゆう",romaji:"jiyū",zh:"自由"},{jp:"湯",kana:"ゆ",romaji:"yu",zh:"熱水、溫泉"}]},
+{romaji:"yo",hiragana:"よ",katakana:"ヨ",hiraSource:"与",hiraNote:"來自「与」,与、予、余都唸よ",kataSource:"與",kataNote:"擷取「與」字右上部分而來",examples:[{jp:"給与",kana:"きゅうよ",romaji:"kyūyo",zh:"薪資報酬"},{jp:"余地",kana:"よち",romaji:"yochi",zh:"餘地"},{jp:"ヨーロッパ",kana:"ヨーロッパ",romaji:"yōroppa",zh:"歐洲"}]},
+{romaji:"ra",hiragana:"ら",katakana:"ラ",hiraSource:"良",hiraNote:"來自「良」,同臺語良心的良音",kataSource:"良",kataNote:"由「良」的頭兩筆劃變來",examples:[{jp:"野良猫",kana:"のらねこ",romaji:"noraneko",zh:"野貓、流浪貓"},{jp:"奈良",kana:"なら",romaji:"nara",zh:"奈良"},{jp:"雷雨",kana:"らいう",romaji:"raiu",zh:"雷雨"}]},
+{romaji:"ri",hiragana:"り",katakana:"リ",hiraSource:"利",hiraNote:"由中文「利」字演變而來",kataSource:"利",kataNote:"代表「利」右半的「刂」部",examples:[{jp:"利益",kana:"りえき",romaji:"rieki",zh:"利益"},{jp:"勝利",kana:"しょうり",romaji:"shōri",zh:"勝利"},{jp:"便利",kana:"べんり",romaji:"benri",zh:"便利"}]},
+{romaji:"ru",hiragana:"る",katakana:"ル",hiraSource:"留",hiraNote:"由中文字「留」變化而來",kataSource:"流",kataNote:"由「流」的最後兩筆擷取而來",examples:[{jp:"留守",kana:"るす",romaji:"rusu",zh:"無人在家"},{jp:"留守番",kana:"るすばん",romaji:"rusuban",zh:"看家的人"},{jp:"流浪",kana:"るろう",romaji:"rurou",zh:"流浪"}]},
+{romaji:"re",hiragana:"れ",katakana:"レ",hiraSource:"礼",hiraNote:"來自礼字的草書,礼通禮",kataSource:"礼",kataNote:"來自礼的右半部",examples:[{jp:"礼儀",kana:"れいぎ",romaji:"reigi",zh:"禮儀"},{jp:"蓮華",kana:"れんげ",romaji:"renge",zh:"蓮花,也指中式湯匙"},{jp:"歴史",kana:"れきし",romaji:"rekishi",zh:"歷史"}]},
+{romaji:"ro",hiragana:"ろ",katakana:"ロ",hiraSource:"呂",hiraNote:"來自「呂」,古讀音近ろ",kataSource:"呂",kataNote:"來自「呂」上面的口",examples:[{jp:"朝風呂",kana:"あさぶろ",romaji:"asaburo",zh:"早上洗澡"},{jp:"老人",kana:"ろうじん",romaji:"rōjin",zh:"老人"},{jp:"浪人",kana:"ろうにん",romaji:"rōnin",zh:"浪人"}]},
+{romaji:"wa",hiragana:"わ",katakana:"ワ",hiraSource:"和",hiraNote:"來自和字草書,和日文讀わ",kataSource:"和",kataNote:"來自「和」右半口的第一、二筆",examples:[{jp:"和服",kana:"わふく",romaji:"wafuku",zh:"日本傳統服裝"},{jp:"和食",kana:"わしょく",romaji:"washoku",zh:"和食"},{jp:"和紙",kana:"わし",romaji:"washi",zh:"和紙"}]},
+{romaji:"wo",hiragana:"を",katakana:"ヲ",hiraSource:"遠",hiraNote:"來自中文字「遠」的草書",kataSource:"乎",kataNote:"來自「乎」中的頭三劃",examples:[{jp:"地図を見る",kana:"ちずをみる",romaji:"chizu wo miru",zh:"看地圖"},{jp:"電車を降りる",kana:"でんしゃをおりる",romaji:"densha wo oriru",zh:"下電車"},{jp:"橋を渡る",kana:"はしをわたる",romaji:"hashi wo wataru",zh:"過橋"}]},
+{romaji:"n",hiragana:"ん",katakana:"ン",hiraSource:"无",hiraNote:"來自「无」字,无通無",kataSource:"尔",kataNote:"來自中文尔,通爾",examples:[{jp:"安",kana:"あん",romaji:"an",zh:"安"},{jp:"運",kana:"うん",romaji:"un",zh:"運"},{jp:"縁",kana:"えん",romaji:"en",zh:"緣"}]}
+];
+const byRomaji = Object.fromEntries(KANA.map(k => [k.romaji, k]));
+
+// 濁音/半濁音:由清音加「゛」「゜」衍生
+function mk(base, romaji, hira, kata, mark) {
+  const b = byRomaji[base];
+  return { romaji, hiragana: hira, katakana: kata, base, mark,
+    derived: true,
+    note: `「${b.hiragana}」加上${mark === "゛" ? "濁點(゛)" : "半濁點(゜)"}就變成「${hira}」,發音由 ${b.romaji} 轉為${mark === "゛" ? "濁音" : "半濁音"} ${romaji}。` };
+}
+const DAKUON = [
+  mk("ka","ga","が","ガ","゛"), mk("ki","gi","ぎ","ギ","゛"), mk("ku","gu","ぐ","グ","゛"), mk("ke","ge","げ","ゲ","゛"), mk("ko","go","ご","ゴ","゛"),
+  mk("sa","za","ざ","ザ","゛"), mk("shi","ji","じ","ジ","゛"), mk("su","zu","ず","ズ","゛"), mk("se","ze","ぜ","ゼ","゛"), mk("so","zo","ぞ","ゾ","゛"),
+  mk("ta","da","だ","ダ","゛"), mk("chi","ji (di)","ぢ","ヂ","゛"), mk("tsu","zu (du)","づ","ヅ","゛"), mk("te","de","で","デ","゛"), mk("to","do","ど","ド","゛"),
+  mk("ha","ba","ば","バ","゛"), mk("hi","bi","び","ビ","゛"), mk("fu","bu","ぶ","ブ","゛"), mk("he","be","べ","ベ","゛"), mk("ho","bo","ぼ","ボ","゛")
+];
+const HANDAKUON = [
+  mk("ha","pa","ぱ","パ","゜"), mk("hi","pi","ぴ","ピ","゜"), mk("fu","pu","ぷ","プ","゜"), mk("he","pe","ぺ","ペ","゜"), mk("ho","po","ぽ","ポ","゜")
+];
+// 拗音:い段假名 + 小寫や/ゆ/よ
+const YOON_BASES = [
+  ["ki","ky"], ["shi","sh"], ["chi","ch"], ["ni","ny"], ["hi","hy"], ["mi","my"], ["ri","ry"]
+];
+const YOON_VOICED = [
+  ["gi","gy","ぎ","ギ"], ["ji","j","じ","ジ"], ["bi","by","び","ビ"], ["pi","py","ぴ","ピ"]
+];
+const SMALL = [["ゃ","ャ","a"], ["ゅ","ュ","u"], ["ょ","ョ","o"]];
+const YOON = [];
+for (const [base, prefix] of YOON_BASES) {
+  const b = byRomaji[base];
+  for (const [sh, sk, v] of SMALL) {
+    YOON.push({ romaji: prefix + v, hiragana: b.hiragana + sh, katakana: b.katakana + sk,
+      base, mark: sh, derived: true,
+      note: `「${b.hiragana}」加上小寫的「${sh}」,兩個假名拼成一拍,唸作 ${prefix + v}。` });
+  }
+}
+for (const [vr, prefix, vh, vk] of YOON_VOICED) {
+  for (const [sh, sk, v] of SMALL) {
+    YOON.push({ romaji: prefix + v, hiragana: vh + sh, katakana: vk + sk,
+      base: vr, mark: sh, derived: true,
+      note: `濁音/半濁音「${vh}」加上小寫的「${sh}」,唸作 ${prefix + v}。` });
+  }
+}
+const SETS = {
+  seion: { name: "清音", list: KANA },
+  dakuon: { name: "濁音", list: DAKUON },
+  handakuon: { name: "半濁音", list: HANDAKUON },
+  yoon: { name: "拗音", list: YOON }
+};
+const shuffle = a => { a = [...a]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const $ = id => document.getElementById(id);
+
+/* ===================== 發音 (Web Speech API) ===================== */
+let jaVoice = null;
+function pickVoice() {
+  const vs = speechSynthesis.getVoices().filter(v => v.lang.startsWith("ja"));
+  jaVoice = vs.find(v => /Kyoko|O-?Ren|Otoya|Google/i.test(v.name)) || vs[0] || null;
+}
+if ("speechSynthesis" in window) {
+  pickVoice();
+  speechSynthesis.onvoiceschanged = pickVoice;
+}
+function speak(text, rate = 0.85) {
+  if (!("speechSynthesis" in window)) { alert("此瀏覽器不支援語音播放"); return; }
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = "ja-JP";
+  if (jaVoice) u.voice = jaVoice;
+  u.rate = rate;
+  speechSynthesis.speak(u);
+}
+$("spkTest").addEventListener("click", () => speak("あいうえお"));
+
+/* ===================== 分頁切換 ===================== */
+document.querySelectorAll(".tabbar button").forEach(b => b.addEventListener("click", () => {
+  document.querySelectorAll(".tabbar button").forEach(x => x.classList.toggle("active", x === b));
+  document.querySelectorAll(".panel").forEach(p => p.classList.toggle("active", p.id === b.dataset.panel));
+  window.scrollTo({ top: 0 });
+}));
+
+/* ===================== 五十音表 ===================== */
+const ROWS_SEION = [
+  ["あ行", ["a","i","u","e","o"]],
+  ["か行", ["ka","ki","ku","ke","ko"]],
+  ["さ行", ["sa","shi","su","se","so"]],
+  ["た行", ["ta","chi","tsu","te","to"]],
+  ["な行", ["na","ni","nu","ne","no"]],
+  ["は行", ["ha","hi","fu","he","ho"]],
+  ["ま行", ["ma","mi","mu","me","mo"]],
+  ["や行", ["ya",null,"yu",null,"yo"]],
+  ["ら行", ["ra","ri","ru","re","ro"]],
+  ["わ行", ["wa",null,null,null,"wo"]],
+  ["撥音", ["n",null,null,null,null]]
+];
+let showKata = false, curSet = "seion";
+function cellHTML(k) {
+  return `<div class="k">${showKata ? k.katakana : k.hiragana}</div><div class="r">${k.romaji}</div>`;
+}
+function renderTable() {
+  const area = $("gridArea");
+  area.innerHTML = "";
+  const grid = document.createElement("div");
+  if (curSet === "seion") {
+    grid.className = "kgrid c5";
+    for (const [label, row] of ROWS_SEION) {
+      const lab = document.createElement("div");
+      lab.className = "row-label"; lab.textContent = label;
+      grid.appendChild(lab);
+      for (const r of row) {
+        const cell = document.createElement("div");
+        if (!r) { cell.className = "cell blank"; grid.appendChild(cell); continue; }
+        const k = byRomaji[r];
+        cell.className = "cell";
+        cell.innerHTML = cellHTML(k);
+        cell.addEventListener("click", () => openSheet(k));
+        grid.appendChild(cell);
+      }
+    }
+  } else {
+    const list = SETS[curSet].list;
+    grid.className = curSet === "yoon" ? "kgrid c3" : "kgrid c5";
+    for (const k of list) {
+      const cell = document.createElement("div");
+      cell.className = "cell";
+      cell.innerHTML = cellHTML(k);
+      cell.addEventListener("click", () => openSheet(k));
+      grid.appendChild(cell);
+    }
+  }
+  area.appendChild(grid);
+}
+document.querySelectorAll("#setChips button").forEach(b => b.addEventListener("click", () => {
+  document.querySelectorAll("#setChips button").forEach(x => x.classList.toggle("on", x === b));
+  curSet = b.dataset.set;
+  renderTable();
+}));
+$("hiraBtn").addEventListener("click", function() {
+  showKata = false; this.classList.add("on"); $("kataBtn").classList.remove("on"); renderTable();
+});
+$("kataBtn").addEventListener("click", function() {
+  showKata = true; this.classList.add("on"); $("hiraBtn").classList.remove("on"); renderTable();
+});
+renderTable();
+
+/* ===================== 詳情底部彈出卡 ===================== */
+function openSheet(k) {
+  const body = $("sheetBody");
+  if (!k.derived) {
+    body.innerHTML = `
+      <div class="row1">
+        <div class="evolve"><div class="src">${k.hiraSource}</div><div class="arrow">➜</div><div class="dst">${k.hiragana}</div></div>
+        <div class="evolve"><div class="src">${k.kataSource}</div><div class="arrow">➜</div><div class="dst">${k.katakana}</div></div>
+        <button class="play-btn" data-say="${k.hiragana}">🔊 ${k.romaji}</button>
+      </div>
+      <div class="note">平假名「${k.hiragana}」:${k.hiraNote}。<br>片假名「${k.katakana}」:${k.kataNote}。</div>
+      <div class="examples">${k.examples.map(e =>
+        `<div class="ex"><span class="jp">${e.jp}</span><span class="kana-r">${e.kana} (${e.romaji})</span><span class="zh">${e.zh}</span><button class="mini-play" data-say="${e.kana}">🔊</button></div>`).join("")}
+      </div>`;
+  } else {
+    const b = byRomaji[k.base];
+    body.innerHTML = `
+      <div class="row1">
+        <div class="evolve"><div class="src">${b ? b.hiragana : ""} + ${k.mark}</div><div class="arrow">➜</div><div class="dst">${k.hiragana} / ${k.katakana}</div></div>
+        <button class="play-btn" data-say="${k.hiragana}">🔊 ${k.romaji}</button>
+      </div>
+      <div class="romaji-line">${k.romaji}</div>
+      <div class="note">${k.note}</div>`;
+  }
+  body.querySelectorAll("[data-say]").forEach(btn =>
+    btn.addEventListener("click", () => speak(btn.dataset.say)));
+  $("sheet").classList.add("open");
+  $("sheetBackdrop").classList.add("open");
+  speak(k.hiragana);
+}
+function closeSheet() {
+  $("sheet").classList.remove("open");
+  $("sheetBackdrop").classList.remove("open");
+}
+$("sheetBackdrop").addEventListener("click", closeSheet);
+
+/* ===================== 字源翻卡 ===================== */
+const DECKS = {
+  seion: { list: KANA, tip: "這個漢字變成了哪個假名?想一想,再點卡片翻面。" },
+  dakuon: { list: [...DAKUON, ...HANDAKUON], tip: "清音加上「゛」或「゜」變成什麼音?點卡片翻面。" },
+  yoon: { list: YOON, tip: "假名加上小寫的ゃゅょ怎麼唸?點卡片翻面。" }
+};
+let curDeck = "seion", deck = shuffle(KANA), deckIdx = 0;
+const fc = $("flashcard");
+function renderFlash() {
+  const k = deck[deckIdx];
+  fc.classList.remove("flipped");
+  if (!k.derived) {
+    $("flashKanji").textContent = k.hiraSource;
+    $("flashNote").innerHTML = `${k.hiraNote}。<br>片假名「${k.katakana}」← ${k.kataSource}:${k.kataNote}。`;
+  } else {
+    const b = byRomaji[k.base];
+    $("flashKanji").textContent = `${b ? b.hiragana : ""} + ${k.mark}`;
+    $("flashNote").textContent = k.note;
+  }
+  $("flashPair").textContent = `${k.hiragana} / ${k.katakana}`;
+  $("flashRomaji").textContent = k.romaji;
+  $("flashProgress").textContent = `${deckIdx + 1} / ${deck.length}`;
+}
+fc.addEventListener("click", () => {
+  fc.classList.toggle("flipped");
+  if (fc.classList.contains("flipped")) speak(deck[deckIdx].hiragana);
+});
+$("flashNext").addEventListener("click", () => { deckIdx = (deckIdx + 1) % deck.length; renderFlash(); });
+$("flashPrev").addEventListener("click", () => { deckIdx = (deckIdx - 1 + deck.length) % deck.length; renderFlash(); });
+$("flashShuffle").addEventListener("click", () => { deck = shuffle(DECKS[curDeck].list); deckIdx = 0; renderFlash(); });
+$("flashPlay").addEventListener("click", () => speak(deck[deckIdx].hiragana));
+document.querySelectorAll("#deckChips button").forEach(b => b.addEventListener("click", () => {
+  document.querySelectorAll("#deckChips button").forEach(x => x.classList.toggle("on", x === b));
+  curDeck = b.dataset.deck;
+  $("flashTip").textContent = DECKS[curDeck].tip;
+  deck = shuffle(DECKS[curDeck].list); deckIdx = 0;
+  renderFlash();
+}));
+renderFlash();
+
+/* ===================== 字源配對 ===================== */
+const mGrid = $("matchGrid");
+let mOpen = [], mLock = false, mMoves = 0, mDone = 0, mTotal = 8;
+function newMatch() {
+  mOpen = []; mLock = false; mMoves = 0; mDone = 0;
+  $("matchMoves").textContent = "0";
+  $("matchWin").textContent = "";
+  const picks = shuffle(KANA).slice(0, mTotal);
+  const cards = shuffle(picks.flatMap(k => [
+    { id: k.romaji, label: k.hiraSource, tag: "字源" },
+    { id: k.romaji, label: k.hiragana, tag: "假名" }
+  ]));
+  mGrid.innerHTML = "";
+  cards.forEach(c => {
+    const el = document.createElement("div");
+    el.className = "mcard";
+    el.innerHTML = `<span class="tag">${c.tag}</span>${c.label}`;
+    el.dataset.id = c.id;
+    el.addEventListener("click", () => flipCard(el));
+    mGrid.appendChild(el);
+  });
+}
+function flipCard(el) {
+  if (mLock || el.classList.contains("open") || el.classList.contains("done")) return;
+  el.classList.add("open");
+  mOpen.push(el);
+  if (mOpen.length < 2) return;
+  mMoves++;
+  $("matchMoves").textContent = mMoves;
+  const [a, b] = mOpen;
+  if (a.dataset.id === b.dataset.id) {
+    a.classList.replace("open", "done"); b.classList.replace("open", "done");
+    speak(byRomaji[a.dataset.id].hiragana);
+    mOpen = []; mDone++;
+    if (mDone === mTotal) $("matchWin").textContent = `全部配對成功!共用了 ${mMoves} 步 🎉`;
+  } else {
+    mLock = true;
+    setTimeout(() => { a.classList.remove("open"); b.classList.remove("open"); mOpen = []; mLock = false; }, 800);
+  }
+}
+$("matchRestart").addEventListener("click", newMatch);
+newMatch();
+
+/* ===================== 測驗 ===================== */
+// 題型:big 為畫面大字;audio 題型改放播放鈕
+const QTYPES = [
+  { pool: "all", q: k => ({ prompt: "這個平假名怎麼唸?", big: k.hiragana, answer: k.romaji, optOf: x => x.romaji }) },
+  { pool: "all", q: k => ({ prompt: "羅馬拼音對應哪個平假名?", big: k.romaji, answer: k.hiragana, optOf: x => x.hiragana }) },
+  { pool: "all", q: k => ({ prompt: "這個片假名怎麼唸?", big: k.katakana, answer: k.romaji, optOf: x => x.romaji }) },
+  { pool: "base", q: k => ({ prompt: `漢字「${k.hiraSource}」演變成哪個平假名?`, big: k.hiraSource, answer: k.hiragana, optOf: x => x.hiragana }) },
+  { pool: "all", q: k => ({ prompt: "找出對應的片假名", big: k.hiragana, answer: k.katakana, optOf: x => x.katakana }) },
+  { pool: "all", q: k => ({ prompt: "聽發音,選出正確的平假名", audio: k.hiragana, answer: k.hiragana, optOf: x => x.hiragana }) }
+];
+let quiz = [], qIdx = 0, qScore = 0, qStreak = 0;
+function loadBest() { $("bestScore").textContent = localStorage.getItem("gojuon-best") ?? "—"; }
+function quizPool() {
+  let pool = [...KANA];
+  if ($("rangeDakuon").checked) pool = pool.concat(DAKUON, HANDAKUON);
+  if ($("rangeYoon").checked) pool = pool.concat(YOON);
+  return pool;
+}
+function startQuiz() {
+  const pool = quizPool();
+  quiz = shuffle(pool).slice(0, 10).map(k => {
+    const types = QTYPES.filter(t => t.pool === "all" || !k.derived);
+    const t = types[Math.floor(Math.random() * types.length)].q(k);
+    const wrong = shuffle(pool.filter(x => x !== k && t.optOf(x) !== t.optOf(k))).slice(0, 3).map(t.optOf);
+    return { ...t, kana: k, options: shuffle([t.answer, ...wrong]) };
+  });
+  qIdx = 0; qScore = 0; qStreak = 0;
+  $("quizStart").hidden = true; $("quizDone").hidden = true; $("quizPlay").hidden = false;
+  renderQ();
+}
+function renderQ() {
+  const q = quiz[qIdx];
+  $("quizNum").textContent = qIdx + 1;
+  $("quizStreak").textContent = qStreak >= 2 ? `🔥 連對 ${qStreak}` : "";
+  $("quizQ").textContent = q.prompt;
+  const big = $("quizBig");
+  if (q.audio) {
+    big.innerHTML = `<button class="hear">🔊</button>`;
+    big.querySelector(".hear").addEventListener("click", () => speak(q.audio));
+    speak(q.audio);
+  } else {
+    big.textContent = q.big;
+  }
+  $("quizFb").textContent = "";
+  const box = $("quizOpts");
+  box.innerHTML = "";
+  q.options.forEach(opt => {
+    const b = document.createElement("button");
+    b.textContent = opt;
+    b.addEventListener("click", () => answer(b, opt, q));
+    box.appendChild(b);
+  });
+}
+function answer(btn, opt, q) {
+  if (q.answered) return;
+  q.answered = true;
+  const ok = opt === q.answer;
+  if (ok) { qScore++; qStreak++; btn.classList.add("right"); $("quizFb").textContent = "答對了!"; $("quizFb").style.color = "var(--teal)"; }
+  else {
+    qStreak = 0; btn.classList.add("wrong");
+    [...$("quizOpts").children].find(b => b.textContent === q.answer).classList.add("right");
+    $("quizFb").textContent = `正確答案是「${q.answer}」`; $("quizFb").style.color = "var(--red)";
+  }
+  if (!q.audio) speak(q.kana.hiragana);
+  setTimeout(() => { qIdx++; qIdx < quiz.length ? renderQ() : endQuiz(); }, 1000);
+}
+function endQuiz() {
+  $("quizPlay").hidden = true; $("quizDone").hidden = false;
+  $("finalScore").textContent = qScore;
+  const best = Number(localStorage.getItem("gojuon-best") ?? -1);
+  if (qScore > best) localStorage.setItem("gojuon-best", qScore);
+  $("finalMsg").textContent =
+    qScore === 10 ? "滿分!五十音真的不用靠背了!" :
+    qScore >= 7 ? "很棒!再多翻幾次字源卡就能滿分。" :
+    "沒關係,回到「字源翻卡」多看幾輪,漢字會幫你記住假名。";
+  loadBest();
+}
+$("quizGo").addEventListener("click", startQuiz);
+$("quizAgain").addEventListener("click", () => { $("quizDone").hidden = true; $("quizStart").hidden = false; });
+loadBest();
+</script>
+</body>
+</html>
