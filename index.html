@@ -5,28 +5,29 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#FFD93B">
-<meta name="description" content="認得字源,假名不用死背。取材自《五十音不靠背》的日語五十音學習遊戲:字源翻卡、配對、測驗與發音播放。">
+<meta name="theme-color" content="#faf5e6">
+<meta name="description" content="從漢字字源與台味諧音口訣學日語五十音:間隔重複複習、限時速答、字源翻卡、配對與測驗。">
 <title>五十音不靠背 · 學習遊戲</title>
 <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body>
 <div id="app">
   <div class="appbar">
-    <img src="assets/img/hero.png" alt="" onerror="this.style.display='none'">
+    <img src="assets/img/hero.jpg" alt="浮世繪虎斑貓" onerror="this.style.display='none'">
     <div>
       <div class="t1">五十音<span>不靠背</span></div>
-      <div class="t2">認得字源,假名不用死背</div>
+      <div class="t2">字源 × 諧音 × 科學複習</div>
     </div>
     <button class="spk-test" id="spkTest" title="測試發音">🔊</button>
   </div>
 
   <!-- 分頁列:手機固定底部,桌機移至頂部 -->
   <div class="tabbar">
-    <button data-panel="table" class="active"><span class="ico">🗾</span>五十音表</button>
-    <button data-panel="flash"><span class="ico">🎴</span>字源翻卡</button>
-    <button data-panel="match"><span class="ico">🧩</span>配對</button>
-    <button data-panel="quiz"><span class="ico">✏️</span>測驗</button>
+    <button data-panel="table" class="active"><span class="ico">表</span>五十音表</button>
+    <button data-panel="flash"><span class="ico">源</span>字源翻卡</button>
+    <button data-panel="match"><span class="ico">合</span>配對</button>
+    <button data-panel="train"><span class="ico">練</span>練功</button>
+    <button data-panel="quiz"><span class="ico">試</span>測驗</button>
   </div>
 
   <main>
@@ -40,6 +41,12 @@
       </div>
       <div class="mode-toggle">
         <button id="hiraBtn" class="on">平假名</button><button id="kataBtn">片假名</button>
+      </div>
+      <div class="legend">熟練度
+        <span><i class="lv-1"></i>初學</span>
+        <span><i class="lv-2"></i>練習中</span>
+        <span><i class="lv-3"></i>熟悉</span>
+        <span><i class="lv-4"></i>秒答</span>
       </div>
       <div id="gridArea"></div>
     </section>
@@ -62,13 +69,14 @@
             <div class="face back">
               <div class="pair" id="flashPair"></div>
               <div class="romaji" id="flashRomaji"></div>
+              <div id="flashMnemo"></div>
               <div class="note" id="flashNote"></div>
             </div>
           </div>
         </div>
         <div class="flash-ctrl">
           <button class="btn" id="flashPrev">上一張</button>
-          <button class="btn teal" id="flashPlay">🔊 發音</button>
+          <button class="btn accent" id="flashPlay">🔊 發音</button>
           <button class="btn primary" id="flashNext">下一張</button>
         </div>
         <div class="flash-ctrl">
@@ -89,18 +97,32 @@
       <div class="match-win" id="matchWin"></div>
     </section>
 
+    <!-- 練功:間隔複習 + 限時速答 -->
+    <section id="train" class="panel">
+      <div class="chips warm" id="trainChips">
+        <button data-tm="srs" class="on">間隔複習</button>
+        <button data-tm="drill">限時速答</button>
+      </div>
+      <div class="quiz-box" id="trainBox"></div>
+      <p class="train-note">
+        間隔複習採 Leitner 盒制:答對升一級、答錯歸零,依到期日自動排程,把快忘記的假名撈回來。
+        限時速答訓練「看到就反應」:60 秒內快答,系統記錄每個假名的反應時間,越弱、越慢的字出現越頻繁。
+        熟練度會即時畫回五十音表。
+      </p>
+    </section>
+
     <!-- 測驗 -->
     <section id="quiz" class="panel">
       <div class="quiz-box" id="quizBox">
         <div id="quizStart">
           <h2 style="margin-bottom:8px">十題挑戰</h2>
-          <p style="color:#666;font-size:.9rem">混合出題:讀音、平片假名互認、字源、聽力。</p>
+          <p style="color:#6b6357;font-size:.9rem">混合出題:讀音、平片假名互認、字源、聽力。</p>
           <div class="quiz-range">
             <label><input type="checkbox" id="rangeSeion" checked disabled>清音(必選)</label>
             <label><input type="checkbox" id="rangeDakuon">濁音・半濁音</label>
             <label><input type="checkbox" id="rangeYoon">拗音</label>
           </div>
-          <p style="color:#666;font-size:.9rem">最佳紀錄:<b id="bestScore">—</b></p>
+          <p style="color:#6b6357;font-size:.9rem">最佳紀錄:<b id="bestScore">—</b></p>
           <br>
           <button class="btn primary" id="quizGo">開始測驗</button>
         </div>
@@ -117,13 +139,13 @@
         <div id="quizDone" class="quiz-result" hidden>
           <h2>測驗結束!</h2>
           <div class="score"><span id="finalScore"></span> / 10</div>
-          <p id="finalMsg" style="color:#666;font-size:.92rem"></p>
+          <p id="finalMsg" style="color:#6b6357;font-size:.92rem"></p>
           <br>
           <button class="btn primary" id="quizAgain">再玩一次</button>
         </div>
       </div>
     </section>
-    <footer>取材自《五十音不靠背:學過一次記得一輩子的假名課》(神奇裘莉 著)</footer>
+    <footer>字源與例詞取材自《五十音不靠背》(神奇裘莉 著)</footer>
   </main>
 
   <!-- 詳情彈出卡:手機為 bottom sheet,桌機為置中對話框 -->
